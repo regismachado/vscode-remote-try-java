@@ -11,6 +11,7 @@ USERNAME=${2:-"vscode"}
 USER_UID=${3:-1000}
 USER_GID=${4:-1000}
 UPGRADE_PACKAGES=${5:-"true"}
+INSTALL_ASDF="true"
 
 set -e
 
@@ -76,6 +77,10 @@ if [ "${PACKAGES_ALREADY_INSTALLED}" != "true" ]; then
         libstdc++6 \
         zlib1g \
         locales \
+        zlib1g-dev \
+        openssl \
+        libssl-dev \
+        build-essential \
         sudo"
 
     # Install libssl1.1 if available
@@ -152,6 +157,8 @@ if [ "${INSTALL_ZSH}" = "true" ] && [ ! -d "/root/.oh-my-zsh" ] && [ "${ZSH_ALRE
     apt-get install -y zsh
     curl -fsSLo- https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh | bash 2>&1
     echo "export PATH=\$PATH:\$HOME/.local/bin" >> /root/.zshrc
+    sed -i 's/_THEME=\"robbyrussell\"/_THEME=\"agnoster\"/g' /root/.zshrc
+    sed -i 's/plugins=(git)/plugins=(git asdf)/g' /root/.zshrc
     if [ "${USERNAME}" != "root" ]; then
         cp -fR /root/.oh-my-zsh /home/$USERNAME
         cp -f /root/.zshrc /home/$USERNAME
@@ -163,6 +170,15 @@ fi
 
 # Write marker file
 mkdir -p "$(dirname "${MARKER_FILE}")"
+if [ "${INSTALL_ASDF}" = "true" ];then
+    git clone https://github.com/asdf-vm/asdf.git ~/.asdf
+    cd ~/.asdf
+    git checkout "$(git describe --abbrev=0 --tags)"
+fi
+
+echo "Set default shell as zsh"
+chsh -s $(which zsh)
+
 echo -e "\
     PACKAGES_ALREADY_INSTALLED=${PACKAGES_ALREADY_INSTALLED}\n\
     LOCALE_ALREADY_SET=${LOCALE_ALREADY_SET}\n\
